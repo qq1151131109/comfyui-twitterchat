@@ -1,0 +1,4 @@
+requests>=2.31.0
+pillow>=10.0.0
+holidays>=0.35
+pytrends>=4.9.0
