@@ -67,11 +67,14 @@ class ImagePromptBuilder:
         if prepend_prompt:
             positive_parts.append(prepend_prompt)
 
-        # 3. 场景描述（LLM 生成）
+        # 3. 单人场景约束（简洁自然语言）
+        positive_parts.append("one person alone")
+
+        # 4. 场景描述（LLM 生成）
         if scene_hint:
             positive_parts.append(scene_hint)
 
-        # 4. 后置提示词（人物特征、画面氛围等）
+        # 5. 后置提示词（人物特征、画面氛围等）
         if append_prompt:
             positive_parts.append(append_prompt)
 

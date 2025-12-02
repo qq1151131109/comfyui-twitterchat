@@ -381,6 +381,7 @@ SCENE: [场景描述，如: traditional courtyard, wearing hanfu, afternoon sunl
 
 场景描述要求:
 - 用英文描述，简洁明了
+- 描述的是这个人物独自一人的场景，不要涉及其他人物
 - 包含地点和氛围
 - 包含服装/姿态（如果推文中提到）
 - 与推文内容和人设完全匹配

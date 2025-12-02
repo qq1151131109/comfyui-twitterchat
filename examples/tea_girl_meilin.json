@@ -423,7 +423,7 @@
       },
 
       "lora": {
-        "model_name": "my_first_lora_v1_zimage_64Rank_000009800.safetensors",
+        "model_name": "z-image/my_first_lora_v1_zimage_64Rank_000009800.safetensors",
         "trigger_words": ["みかみゆあ", "三上悠亚", "Yua Mikami"],
         "recommended_weight": 0.8,
         "notes": "三上悠亚自训练 LoRA 模型"
