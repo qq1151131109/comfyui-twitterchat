@@ -3,6 +3,7 @@ import os
 import json
 from datetime import datetime
 from typing import Dict, Optional
+from .file_lock import file_lock
 
 
 class CalendarManager:
@@ -53,7 +54,7 @@ class CalendarManager:
 
     def load_calendar(self, persona_name: str, year_month: str) -> Optional[Dict]:
         """
-        加载日历文件
+        加载日历文件（带文件锁保护）
 
         Args:
             persona_name: 人设名称
@@ -68,15 +69,20 @@ class CalendarManager:
             return None
 
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            # 使用文件锁保护读取操作
+            with file_lock(path, timeout=5.0):
+                with open(path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except TimeoutError:
+            print(f"[CalendarManager] 加载日历超时（文件被锁定）: {path}")
+            return None
         except Exception as e:
-            print(f"加载日历失败: {e}")
+            print(f"[CalendarManager] 加载日历失败: {e}")
             return None
 
     def save_calendar(self, persona_name: str, year_month: str, calendar_data: Dict) -> bool:
         """
-        保存日历文件
+        保存日历文件（带文件锁保护）
 
         Args:
             persona_name: 人设名称
@@ -89,11 +95,16 @@ class CalendarManager:
         path = self.get_calendar_path(persona_name, year_month)
 
         try:
-            with open(path, 'w', encoding='utf-8') as f:
-                json.dump(calendar_data, f, ensure_ascii=False, indent=2)
+            # 使用文件锁保护写入操作
+            with file_lock(path, timeout=10.0):
+                with open(path, 'w', encoding='utf-8') as f:
+                    json.dump(calendar_data, f, ensure_ascii=False, indent=2)
             return True
+        except TimeoutError:
+            print(f"[CalendarManager] 保存日历超时（文件被锁定）: {path}")
+            return False
         except Exception as e:
-            print(f"保存日历失败: {e}")
+            print(f"[CalendarManager] 保存日历失败: {e}")
             return False
 
     def get_today_plan(self, persona_name: str, date: Optional[str] = None) -> Optional[Dict]:

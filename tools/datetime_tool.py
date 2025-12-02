@@ -1,32 +1,39 @@
-"""日期时间工具（支持多国节假日）"""
+"""日期时间工具（支持多国节假日和时区）"""
 import holidays
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 class DateTimeTool:
-    """日期时间工具"""
+    """日期时间工具（支持时区）"""
 
-    def __init__(self, country: str = "US", compact: bool = True):
+    def __init__(self, country: str = "US", compact: bool = True, timezone: str = None):
         """
         初始化
 
         参数:
-            country: 国家代码 (US, GB, CA, AU, JP, KR, etc.)
+            country: 国家代码 (US, GB, CA, AU, JP, KR, CN, etc.)
             compact: 是否返回精简模式（默认 True）
                      True: 只返回 formatted, formatted_special 等关键字段
                      False: 返回所有原始字段
+            timezone: 时区字符串 (例如: "Asia/Shanghai", "America/New_York")
+                     如果为None，使用服务器本地时间
         """
         self.country = country
         self.compact = compact
+        self.timezone = ZoneInfo(timezone) if timezone else None
         try:
             self.holidays = holidays.country_holidays(country)
         except:
             # 如果国家代码无效，默认使用 US
             self.holidays = holidays.country_holidays("US")
 
-    def execute(self) -> dict:
+    def execute(self, day_offset: int = 0) -> dict:
         """
-        获取当前日期时间信息
+        获取日期时间信息
+
+        参数:
+            day_offset: 日期偏移量（0=今天，1=明天，-1=昨天）
 
         返回 (compact=True):
             {
@@ -40,6 +47,7 @@ class DateTimeTool:
                 "weekday": "Thursday",
                 "weekday_cn": "周四",
                 "time": "14:30",
+                "timezone": "Asia/Shanghai",
                 "is_holiday": False,
                 "holiday_name": None,
                 "is_weekend": False,
@@ -47,7 +55,17 @@ class DateTimeTool:
                 "formatted_special": None
             }
         """
-        now = datetime.now()
+        # 使用用户时区（如果提供）
+        if self.timezone:
+            now = datetime.now(self.timezone)
+        else:
+            now = datetime.now()
+
+        # 应用日期偏移
+        if day_offset != 0:
+            from datetime import timedelta
+            now = now + timedelta(days=day_offset)
+
         date = now.date()
 
         # 判断是否节假日
@@ -81,7 +99,7 @@ class DateTimeTool:
                 4: "周五", 5: "周六", 6: "周日"
             }
 
-            return {
+            result = {
                 "date": now.strftime("%Y-%m-%d"),
                 "weekday": now.strftime("%A"),
                 "weekday_cn": weekday_cn_map[now.weekday()],
@@ -92,3 +110,9 @@ class DateTimeTool:
                 "formatted": formatted,
                 "formatted_special": formatted_special
             }
+
+            # 添加时区信息
+            if self.timezone:
+                result["timezone"] = str(self.timezone)
+
+            return result

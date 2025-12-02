@@ -128,6 +128,8 @@
           "city": "安溪",
           "province": "福建",
           "country_code": "CN",
+          "timezone": "Asia/Shanghai",
+          "utc_offset": "+08:00",
           "tea_garden": "祥云茶园（爷爷家）"
         }
       },
@@ -421,10 +423,10 @@
       },
 
       "lora": {
-        "model_name": "yua_mikami_v1",
+        "model_name": "my_first_lora_v1_zimage_64Rank_000009800.safetensors",
         "trigger_words": ["みかみゆあ", "三上悠亚", "Yua Mikami"],
         "recommended_weight": 0.8,
-        "notes": "三上悠亚 LoRA 模型，适合多种场景"
+        "notes": "三上悠亚自训练 LoRA 模型"
       },
 
       "content_restrictions": {

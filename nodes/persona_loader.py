@@ -5,44 +5,84 @@ from ..utils.persona_utils import (
     generate_persona_summary
 )
 import os
+import json
 
 
 class PersonaLoader:
-    """人设加载器"""
+    """人设加载器（支持文件路径或JSON字符串）"""
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
+                "input_mode": (["file", "json_string"], {
+                    "default": "file",
+                    "tooltip": "选择输入模式：file=从文件加载，json_string=直接传入JSON"
+                }),
                 "persona_file": ("STRING", {
                     "default": "",
                     "multiline": False,
-                    "placeholder": "path/to/persona.json"
+                    "placeholder": "path/to/persona.json (仅在file模式下使用)"
+                }),
+            },
+            "optional": {
+                "persona_json": ("STRING", {
+                    "default": "",
+                    "multiline": True,
+                    "placeholder": "完整的Persona JSON字符串 (仅在json_string模式下使用)",
+                    "forceInput": True  # 允许从API传入
+                }),
+                "user_id": ("STRING", {
+                    "default": "",
+                    "placeholder": "用户ID（用于日志和输出管理）"
                 }),
             }
         }
 
-    RETURN_TYPES = ("PERSONA", "STRING", "STRING")
-    RETURN_NAMES = ("persona", "summary", "system_prompt")
+    RETURN_TYPES = ("PERSONA", "STRING", "STRING", "STRING")
+    RETURN_NAMES = ("persona", "summary", "system_prompt", "user_id")
     FUNCTION = "load"
     CATEGORY = "TwitterChat"
-    DESCRIPTION = "Load persona from JSON file"
+    DESCRIPTION = "Load persona from file path or JSON string (multi-user support)"
 
-    def load(self, persona_file):
+    def load(self, input_mode, persona_file, persona_json="", user_id=""):
         """
-        加载人设 Character Card
+        加载人设 Character Card（支持两种模式）
 
         参数:
-            persona_file: JSON 文件路径
+            input_mode: "file" 或 "json_string"
+            persona_file: JSON 文件路径（file模式）
+            persona_json: JSON 字符串（json_string模式）
+            user_id: 用户ID（用于日志和输出）
 
         返回:
-            (persona, summary, system_prompt)
+            (persona, summary, system_prompt, user_id)
         """
         try:
-            if persona_file and os.path.exists(persona_file):
+            # 根据模式加载人设
+            if input_mode == "file":
+                if not persona_file or not os.path.exists(persona_file):
+                    raise ValueError(f"文件模式：请提供有效的 persona_file 路径: {persona_file}")
                 persona = load_persona_from_json(persona_file)
+                print(f"[PersonaLoader] 从文件加载人设: {persona_file}")
+
+            elif input_mode == "json_string":
+                if not persona_json or persona_json.strip() == "":
+                    raise ValueError("JSON字符串模式：persona_json 不能为空")
+
+                # 解析JSON字符串
+                try:
+                    persona = json.loads(persona_json)
+                    print(f"[PersonaLoader] 从JSON字符串加载人设 (user_id={user_id})")
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"JSON字符串解析失败: {str(e)}")
+
             else:
-                raise ValueError("请提供有效的 persona_file 路径")
+                raise ValueError(f"不支持的输入模式: {input_mode}")
+
+            # 验证人设结构
+            if "data" not in persona:
+                raise ValueError("人设JSON缺少'data'字段，请检查格式")
 
             # 生成摘要
             summary = generate_persona_summary(persona)
@@ -50,7 +90,11 @@ class PersonaLoader:
             # 提取系统提示词
             system_prompt = persona["data"].get("system_prompt", "")
 
-            return (persona, summary, system_prompt)
+            # 如果user_id为空，尝试从persona中提取
+            if not user_id:
+                user_id = persona["data"].get("user_id", "")
+
+            return (persona, summary, system_prompt, user_id)
 
         except Exception as e:
             raise RuntimeError(f"加载人设失败: {str(e)}")

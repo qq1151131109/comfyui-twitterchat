@@ -38,7 +38,7 @@ class ContextGatherer:
     def gather(self, persona, enable_weather=True, weather_api_key="",
                enable_trending=False):
         """
-        收集上下文信息（完全从人设中读取地理位置）
+        收集上下文信息（完全从人设中读取地理位置和时区）
 
         返回:
             context 字典
@@ -48,10 +48,20 @@ class ContextGatherer:
         # 从人设获取城市和国家代码
         city, country_code = get_persona_location(persona)
 
+        # 从人设获取时区
+        timezone = None
+        try:
+            location = persona.get("data", {}).get("core_info", {}).get("location", {})
+            timezone = location.get("timezone")
+            if timezone:
+                print(f"[ContextGatherer] 使用用户时区: {timezone}")
+        except Exception as e:
+            print(f"[ContextGatherer] 读取时区失败，使用服务器时间: {str(e)}")
+
         # 1. 日期时间（必选，使用精简模式）
         try:
-            # 使用人设的国家代码检测节假日，启用精简模式
-            date_tool = DateTimeTool(country=country_code, compact=True)
+            # 使用人设的国家代码和时区检测节假日，启用精简模式
+            date_tool = DateTimeTool(country=country_code, compact=True, timezone=timezone)
             context["date"] = date_tool.execute()
         except Exception as e:
             context["date"] = {"error": str(e)}

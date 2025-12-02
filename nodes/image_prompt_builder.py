@@ -87,7 +87,7 @@ class ImagePromptBuilder:
             persona: Character Card 数据
 
         返回:
-            LoRA 触发词字符串，格式：<lora:model_name:weight>, trigger_word1, trigger_word2
+            LoRA 触发词字符串，格式：trigger_word1, trigger_word2
         """
         data = persona.get("data", {})
 
@@ -97,28 +97,17 @@ class ImagePromptBuilder:
         if not lora_config:
             return ""
 
-        # 提取 LoRA 配置信息
-        model_name = lora_config.get("model_name", "")
+        # 提取触发词
         trigger_words = lora_config.get("trigger_words", [])
-        recommended_weight = lora_config.get("recommended_weight", 0.7)
 
-        if not model_name:
+        if not trigger_words:
             return ""
 
-        # 构建 LoRA 触发词
-        lora_parts = []
-
-        # 添加 LoRA 模型标签
-        lora_parts.append(f"<lora:{model_name}:{recommended_weight}>")
-
-        # 添加触发词
-        if trigger_words:
-            if isinstance(trigger_words, list):
-                lora_parts.extend(trigger_words)
-            else:
-                lora_parts.append(str(trigger_words))
-
-        return ", ".join(lora_parts)
+        # 只返回触发词（不包含 LoRA 标签）
+        if isinstance(trigger_words, list):
+            return ", ".join(trigger_words)
+        else:
+            return str(trigger_words)
 
 
 # 节点注册
