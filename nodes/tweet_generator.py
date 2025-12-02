@@ -381,18 +381,19 @@ SCENE: [详细场景描述，用自然的段落描述]
 
 场景描述要求（使用英文，详细但自然）:
 - **必须**：描述的是这个人物独自一人的场景，不要涉及其他人物
-- **人物外貌**：发型、肤色、表情、眼神等特征（基于人设）
+- **不要描述**：人物的外貌特征（发型、年龄、肤色、五官等由LoRA控制）
 - **服装细节**：具体描述穿着的服饰、配饰、鞋子等
-- **姿态动作**：站/坐/躺的具体姿势，手的位置，身体朝向等
-- **光线**：光源类型（阳光/室内灯光/烛光等）、光线效果、阴影
+- **姿态动作**：站/坐/躺的具体姿势，手的位置，身体朝向，在做什么动作
+- **场景环境**：具体的地点、空间布局
+- **光线**：光源类型（阳光/室内灯光/烛光等）、光线效果、色调、阴影
 - **氛围感**：整体情绪、氛围（peaceful/elegant/cozy/energetic等）
-- **背景细节**：环境的具体描述（家具、装饰、植物、建筑等）
+- **背景细节**：环境中的家具、装饰、植物、建筑等具体元素
 - **镜头信息**：拍摄角度（front view/side view）、景别（close-up/medium shot/full body）、焦距效果（shallow depth of field等）
 
 示例（参考风格）:
-"A young woman alone in a traditional Chinese tea room. She has long black hair styled elegantly, fair skin, and a gentle smile. Wearing an exquisite light blue qipao with delicate floral embroidery, paired with traditional cloth shoes. She is sitting gracefully on a wooden chair, hands resting on the tea table, preparing tea with focused expression. Soft afternoon sunlight streams through the paper window, creating warm golden tones and gentle shadows. The atmosphere is peaceful and refined. Background shows traditional wooden furniture, hanging calligraphy scrolls, and ceramic tea sets on shelves. Medium shot, slight side angle, shallow depth of field focusing on her face and hands, cinematic lighting, 8k quality."
+"A woman alone in a traditional Chinese tea room. Wearing an exquisite light blue qipao with delicate floral embroidery, paired with traditional cloth shoes. She is sitting gracefully on a wooden chair, hands resting on the tea table, preparing tea with focused expression. Soft afternoon sunlight streams through the paper window, creating warm golden tones and gentle shadows on the wooden floor. The atmosphere is peaceful and refined. Background shows traditional wooden furniture, hanging calligraphy scrolls on the wall, ceramic tea sets arranged on antique shelves, and a small bonsai tree by the window. Medium shot, slight side angle, shallow depth of field focusing on her hands and the teaware, cinematic lighting, warm color grading, 8k quality."
 
-用这种详细但流畅的自然语言描述，不要用逗号分隔的标签列表。
+用这种详细但流畅的自然语言描述，不要用逗号分隔的标签列表。重点描述场景、服装、动作和光线，人物外貌由LoRA控制。
 """
 
         return user_prompt
