@@ -42,10 +42,10 @@ class ImagePromptBuilder:
     def build(self, scene_hint, persona, prepend_prompt="masterpiece, best quality, 8k uhd, professional photography",
               append_prompt="", auto_lora=True):
         """
-        构建图像提示词（使用 LLM 生成的场景描述）
+        构建图像提示词（使用 LLM 生成的详细场景描述）
 
         参数:
-            scene_hint: 从 TweetGenerator 连接的场景提示
+            scene_hint: 从 TweetGenerator 连接的详细场景提示
             persona: Character Card 数据
             prepend_prompt: 前置提示词（放在场景之前）
             append_prompt: 后置提示词（放在场景之后）
@@ -67,14 +67,11 @@ class ImagePromptBuilder:
         if prepend_prompt:
             positive_parts.append(prepend_prompt)
 
-        # 3. 单人场景约束（简洁自然语言）
-        positive_parts.append("one person alone")
-
-        # 4. 场景描述（LLM 生成）
+        # 3. 场景描述（LLM 生成的详细描述，已包含所有信息）
         if scene_hint:
             positive_parts.append(scene_hint)
 
-        # 5. 后置提示词（人物特征、画面氛围等）
+        # 4. 后置提示词（人物特征、画面氛围等）
         if append_prompt:
             positive_parts.append(append_prompt)
 
