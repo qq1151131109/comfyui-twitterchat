@@ -210,31 +210,63 @@ class CalendarManager:
 6. suggested_scene 用英文描述，简洁明了
 7. **重要**：suggested_scene 必须是单人场景，只描述这个人物自己的活动，不要出现其他人（如爷爷、朋友、家人等）
 
+8. **新增 - 内容类型分布要求**：
+   - 50% lifestyle_mundane（生活琐碎/日常废话，如"今天天气好热"、"午饭吃什么"）
+   - 20% personal_emotion（情绪分享，如累/孤独/开心/怀旧）
+   - 20% interaction_bait（互动引导：poll投票/question提问/choice选择题/controversy温和争议）
+   - 8% visual_showcase（OOTD、自拍、才艺展示）
+   - 2% cta_conversion（引流转化，每周最多1-2次）
+
+9. **新增 - 为每天推荐发布时间段**：
+   - early_morning (06:00-08:30): 适合起床抱怨、困倦内容
+   - morning (08:30-11:30): 适合日常工作/学习、阳光分享
+   - midday (11:30-14:00): 适合投票、闲聊、选择题
+   - afternoon (14:00-18:00): 适合专注工作/学习、才艺展示
+   - evening_prime (18:00-22:00): 适合OOTD、自拍、视觉内容
+   - late_night (22:00-02:00): 适合失眠、孤独、情感、引流
+
+10. **新增 - 战略性缺陷分配**（可选）：
+    每周随机在2-3天的计划中指定一个战略性缺陷：
+    - sleep_deprived（失眠/困倦）
+    - clumsy（笨拙/打翻东西）
+    - tech_inept（技术故障/WiFi断）
+    - forgetful（健忘）
+
 输出格式（严格 JSON，不要有其他说明文字）：
 {{
   "{year_month}-01": {{
     "weekday": "Monday",
-    "topic_type": "根据人设定义的内容类型（如：采茶日常/传统文化/健身打卡/日常分享等）",
-    "theme": "具体的推文主题",
-    "content_direction": "内容方向和要点",
-    "keywords": ["关键词1", "关键词2", "关键词3"],
-    "suggested_scene": "场景描述（英文）",
-    "special_event": null
+    "topic_type": "lifestyle_mundane",  // 必须是上述类型之一：lifestyle_mundane/personal_emotion/interaction_bait/visual_showcase/cta_conversion
+    "tweet_format": "standard",  // standard/thread/poll/grwm
+    "recommended_time": "morning",  // 推荐时间段：early_morning/morning/midday/afternoon/evening_prime/late_night
+    "mood": "energetic",  // 匹配时间段的情绪
+    "theme": "晨间日常",
+    "content_direction": "分享早上的例行公事，轻松愉快",
+    "keywords": ["早晨", "日常", "阳光"],
+    "suggested_scene": "morning routine, sunlight, energetic mood...",
+    "special_event": null,
+    "strategic_flaw": null  // 可选：sleep_deprived/clumsy/tech_inept/forgetful
   }},
   "{year_month}-{actual_days:02d}": {{
     "weekday": "...",
     "topic_type": "...",
+    "tweet_format": "...",
+    "recommended_time": "...",
+    "mood": "...",
     "theme": "...",
     "content_direction": "...",
     "keywords": [...],
     "suggested_scene": "...",
-    "special_event": null
+    "special_event": null,
+    "strategic_flaw": null
   }}
 }}
 
 重要提示：
-- topic_type 应该根据人设特点自定义，不要使用固定模板
-- 内容类型要符合角色的职业、兴趣、生活方式
+- topic_type 必须严格使用上述5种类型（lifestyle_mundane/personal_emotion/interaction_bait/visual_showcase/cta_conversion）
+- 内容分布要遵循 50%/20%/20%/8%/2% 的比例
+- recommended_time 要根据内容类型合理匹配（如 late_night 适合情感内容）
+- strategic_flaw 每周随机分配2-3次，不要每天都有
 - 保持风格一致性，符合人设的语言习惯和行为特点
 
 请直接输出 JSON，不要包含任何 ```json 标记或其他说明。

@@ -64,8 +64,8 @@ class CalendarManager:
             }
         }
 
-    RETURN_TYPES = ("CALENDAR_PLAN", "STRING", "STRING", "STRING", "BOOLEAN")
-    RETURN_NAMES = ("today_plan", "calendar_status", "full_calendar", "calendar_prompt", "is_batch_mode")
+    RETURN_TYPES = ("CALENDAR_PLAN", "STRING", "STRING", "STRING", "STRING", "STRING", "BOOLEAN")
+    RETURN_NAMES = ("today_plan", "calendar_status", "full_calendar", "calendar_prompt", "system_prompt", "user_prompt", "is_batch_mode")
     FUNCTION = "manage_calendar"
     CATEGORY = "TwitterChat"
     DESCRIPTION = "Manage content calendar for persona (default: 15 days, use day_offset for batch generation)"
@@ -88,7 +88,7 @@ class CalendarManager:
             calendar_prompt_override: 直接覆盖日历生成提示词
 
         返回:
-            (today_plan, calendar_status, full_calendar, calendar_prompt, is_batch_mode)
+            (today_plan, calendar_status, full_calendar, calendar_prompt, system_prompt, user_prompt, is_batch_mode)
         """
         import json
         from datetime import datetime, timedelta
@@ -109,19 +109,23 @@ class CalendarManager:
 
         # 用于保存生成的 prompt
         calendar_prompt = ""
+        system_prompt = ""
+        user_prompt = ""
 
         # 检查是否需要生成日历
         need_generate = force_regenerate or not cal_manager.calendar_exists(persona_name, year_month)
 
         if need_generate:
             # 生成新日历
-            status, calendar_prompt = self._generate_calendar(
+            status, calendar_prompt, system_prompt, user_prompt = self._generate_calendar(
                 cal_manager, persona, persona_name, year_month,
                 api_key, api_base, model, temperature, days_to_generate, max_tokens, calendar_prompt_override
             )
         else:
             status = f"✓ 使用已有日历: {year_month}"
             calendar_prompt = "(使用已有日历，未生成新提示词)"
+            system_prompt = "(使用已有日历，未生成新提示词)"
+            user_prompt = "(使用已有日历，未生成新提示词)"
 
         # 获取目标日期的计划
         target_plan = cal_manager.get_today_plan(persona_name, target_date_str)
@@ -129,7 +133,7 @@ class CalendarManager:
         if target_plan is None:
             # 如果没有目标日期的计划（可能是跨月），尝试生成
             if not need_generate:
-                status, calendar_prompt = self._generate_calendar(
+                status, calendar_prompt, system_prompt, user_prompt = self._generate_calendar(
                     cal_manager, persona, persona_name, year_month,
                     api_key, api_base, model, temperature, days_to_generate, max_tokens, calendar_prompt_override
                 )
@@ -153,7 +157,7 @@ class CalendarManager:
         else:
             full_calendar = json.dumps({"error": "无法读取完整日历"}, ensure_ascii=False)
 
-        return (target_plan, status, full_calendar, calendar_prompt, is_batch_mode)
+        return (target_plan, status, full_calendar, calendar_prompt, system_prompt, user_prompt, is_batch_mode)
 
     def _generate_calendar(self, cal_manager, persona, persona_name, year_month,
                            api_key, api_base, model, temperature, days_to_generate, max_tokens, calendar_prompt_override=""):
@@ -166,15 +170,18 @@ class CalendarManager:
             calendar_prompt_override: 直接覆盖提示词
 
         返回:
-            (状态信息, 使用的提示词)
+            (状态信息, 完整提示词, 系统提示词, 用户提示词)
         """
         try:
-            # 构建 prompt
-            prompt = cal_manager.generate_calendar_prompt(persona, year_month, days_to_generate)
+            # 定义系统提示词
+            system_prompt = "你是专业的社交媒体运营专家，擅长规划内容日历。\n\n重要要求：\n1. 必须输出有效的 JSON 格式\n2. 所有字符串必须使用英文双引号 \"，不能使用中文引号 " "\n3. 所有字段必须完整，不能遗漏\n4. 输出必须是完整的 JSON 对象，不能截断\n5. 不要在 JSON 前后添加任何说明文字，直接输出 JSON"
+
+            # 构建用户 prompt
+            user_prompt = cal_manager.generate_calendar_prompt(persona, year_month, days_to_generate)
 
             # ⭐ 如果有 override，使用 override（优先级最高）
             if calendar_prompt_override.strip():
-                prompt = calendar_prompt_override
+                user_prompt = calendar_prompt_override
 
             # 调用 LLM
             llm = LLMClient(api_key, api_base, model)
@@ -182,11 +189,11 @@ class CalendarManager:
             messages = [
                 {
                     "role": "system",
-                    "content": "你是专业的社交媒体运营专家，擅长规划内容日历。\n\n重要要求：\n1. 必须输出有效的 JSON 格式\n2. 所有字符串必须使用英文双引号 \"，不能使用中文引号 " "\n3. 所有字段必须完整，不能遗漏\n4. 输出必须是完整的 JSON 对象，不能截断\n5. 不要在 JSON 前后添加任何说明文字，直接输出 JSON"
+                    "content": system_prompt
                 },
                 {
                     "role": "user",
-                    "content": prompt
+                    "content": user_prompt
                 }
             ]
 
@@ -197,7 +204,9 @@ class CalendarManager:
 
             if cal_manager.save_calendar(persona_name, year_month, calendar_data):
                 days_count = len(calendar_data["calendar"])
-                return (f"✓ 成功生成 {year_month} 日历 ({days_count} 天)", prompt)
+                # 返回完整提示词（用于向后兼容）
+                full_prompt = f"System:\n{system_prompt}\n\nUser:\n{user_prompt}"
+                return (f"✓ 成功生成 {year_month} 日历 ({days_count} 天)", full_prompt, system_prompt, user_prompt)
             else:
                 raise RuntimeError("保存日历失败")
 

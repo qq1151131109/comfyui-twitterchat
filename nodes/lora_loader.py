@@ -76,14 +76,19 @@ class LoraLoaderFromPersona:
             return (model, clip, "No LoRA config found in persona")
 
         # 获取 LoRA 名称（优先使用 override）
-        lora_name = lora_name_override.strip() if lora_name_override.strip() else lora_config.get("model_name", "")
+        if lora_name_override.strip():
+            lora_name = lora_name_override.strip()
+        else:
+            # 支持 model_name 和 model_path 两种字段名
+            lora_name = lora_config.get("model_name") or lora_config.get("model_path", "")
 
         if not lora_name:
             return (model, clip, "No LoRA model name specified")
 
         # 使用人设中的推荐权重（如果 strength_model 是默认值 1.0）
+        # 支持 recommended_weight 和 strength 两种字段名
         if strength_model == 1.0:
-            strength_model = lora_config.get("recommended_weight", 1.0)
+            strength_model = lora_config.get("recommended_weight") or lora_config.get("strength", 1.0)
 
         # 检查 LoRA 文件是否存在
         try:
