@@ -68,89 +68,34 @@ class PersonaLoader:
                 if not persona_json or persona_json.strip() == "":
                     raise ValueError("JSON字符串模式：persona_json 不能为空")
 
-                # 调试信息：显示原始输入
-                print(f"[PersonaLoader] 原始输入长度: {len(persona_json)} 字符")
-                print(f"[PersonaLoader] 原始输入类型: {type(persona_json)}")
-                print(f"[PersonaLoader] 前 200 字符: {repr(persona_json[:200])}")
-                print(f"[PersonaLoader] 后 100 字符: {repr(persona_json[-100:])}")
+                # 预处理：去除常见的格式问题
+                persona_json_cleaned = persona_json.lstrip('\ufeff').strip()  # 去除BOM和空白
 
-                # 预处理 JSON 字符串
-                # 1. 去除 UTF-8 BOM（如果存在）
-                persona_json_cleaned = persona_json.lstrip('\ufeff')
-
-                # 2. 去除前后空白字符
-                persona_json_cleaned = persona_json_cleaned.strip()
-
-                print(f"[PersonaLoader] 清理后长度: {len(persona_json_cleaned)} 字符")
-                print(f"[PersonaLoader] 清理后前 200 字符: {repr(persona_json_cleaned[:200])}")
-
-                # 3. 检查 JSON 格式并处理
-                # 检查是否以 { 开头（对象）或 [ 开头（数组）
                 if not persona_json_cleaned:
                     raise ValueError("清理后的 JSON 字符串为空")
-
-                first_char = persona_json_cleaned[0]
-                print(f"[PersonaLoader] JSON 第一个字符: {repr(first_char)}")
-
-                if first_char == '{':
-                    # JSON 对象 - 查找第一个完整的对象
-                    print(f"[PersonaLoader] 检测到 JSON 对象格式")
-                    depth = 0
-                    in_string = False
-                    escape = False
-                    first_json_end = -1
-
-                    for i, char in enumerate(persona_json_cleaned):
-                        if escape:
-                            escape = False
-                            continue
-                        if char == '\\':
-                            escape = True
-                            continue
-                        if char == '"' and not escape:
-                            in_string = not in_string
-                        if not in_string:
-                            if char == '{':
-                                depth += 1
-                            elif char == '}':
-                                depth -= 1
-                                if depth == 0:
-                                    first_json_end = i + 1
-                                    break
-
-                    if first_json_end > 0 and first_json_end < len(persona_json_cleaned):
-                        # 发现有额外内容
-                        extra_content = persona_json_cleaned[first_json_end:].strip()
-                        if extra_content:
-                            print(f"[PersonaLoader] ⚠️  警告: 检测到JSON对象后有额外内容，已自动截取第一个JSON对象")
-                            print(f"[PersonaLoader]    额外内容的前100字符: {repr(extra_content[:100])}")
-                            persona_json_cleaned = persona_json_cleaned[:first_json_end]
-
-                elif first_char == '[':
-                    print(f"[PersonaLoader] 检测到 JSON 数组格式（不支持）")
-                    raise ValueError("不支持 JSON 数组格式，请传入 JSON 对象（以 {{ 开头）")
-
-                else:
-                    print(f"[PersonaLoader] ⚠️  错误: JSON 格式无效")
-                    print(f"[PersonaLoader]    第一个字符应该是 '{{' 或 '['，但是: {repr(first_char)}")
-                    print(f"[PersonaLoader]    前 500 字符: {repr(persona_json_cleaned[:500])}")
-                    raise ValueError(f"JSON 格式无效：应以 '{{' 开头，但实际是 {repr(first_char)}")
 
                 # 解析JSON字符串
                 try:
                     persona = json.loads(persona_json_cleaned)
-                    print(f"[PersonaLoader] 从JSON字符串加载人设 (user_id={user_id}, 长度={len(persona_json_cleaned)}字符)")
+                    print(f"[PersonaLoader] 从JSON字符串加载人设 (user_id={user_id}, {len(persona_json_cleaned)} 字符)")
+
                 except json.JSONDecodeError as e:
                     # 提供详细的错误信息帮助调试
                     error_pos = e.pos if hasattr(e, 'pos') else 0
-                    context_start = max(0, error_pos - 50)
-                    context_end = min(len(persona_json_cleaned), error_pos + 50)
+                    context_start = max(0, error_pos - 100)
+                    context_end = min(len(persona_json_cleaned), error_pos + 100)
                     error_context = persona_json_cleaned[context_start:context_end]
 
-                    error_msg = f"JSON字符串解析失败: {str(e)}\n"
-                    error_msg += f"错误位置: line {e.lineno}, column {e.colno}\n"
-                    error_msg += f"错误位置附近的内容: {repr(error_context)}\n"
-                    error_msg += f"提示: 请检查JSON格式是否正确，是否有多余的字符或重复的JSON对象"
+                    error_msg = (
+                        f"JSON解析失败: {str(e)}\n"
+                        f"错误位置: line {e.lineno}, column {e.colno} (position {error_pos})\n"
+                        f"错误附近内容: ...{repr(error_context)}...\n\n"
+                        f"提示:\n"
+                        f"- 检查JSON格式是否正确（使用在线JSON验证工具）\n"
+                        f"- 确保开头是 '{{' 结尾是 '}}'\n"
+                        f"- 检查引号、逗号、括号是否匹配\n"
+                        f"- 原始输入长度: {len(persona_json)} 字符，清理后: {len(persona_json_cleaned)} 字符"
+                    )
                     raise ValueError(error_msg)
 
             else:
