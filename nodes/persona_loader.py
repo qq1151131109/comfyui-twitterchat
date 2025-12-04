@@ -17,20 +17,18 @@ class PersonaLoader:
             "required": {
                 "input_mode": (["file", "json_string"], {
                     "default": "file",
-                    "tooltip": "选择输入模式：file=从文件加载，json_string=直接传入JSON"
+                    "tooltip": "选择输入模式：file=从文件加载，json_string=直接在下方输入JSON"
                 }),
                 "persona_file": ("STRING", {
                     "default": "",
                     "multiline": False,
                     "placeholder": "path/to/persona.json (仅在file模式下使用)"
                 }),
-            },
-            "optional": {
                 "persona_json": ("STRING", {
                     "default": "",
                     "multiline": True,
-                    "placeholder": "完整的Persona JSON字符串 (仅在json_string模式下使用)",
-                    "forceInput": True  # 允许从API传入
+                    "placeholder": "完整的Persona JSON字符串 (仅在json_string模式下使用)\n\n在这里直接粘贴JSON内容，无需Text Multiline节点",
+                    "dynamicPrompts": False  # 禁用动态提示符处理
                 }),
                 "user_id": ("STRING", {
                     "default": "",
@@ -70,6 +68,12 @@ class PersonaLoader:
                 if not persona_json or persona_json.strip() == "":
                     raise ValueError("JSON字符串模式：persona_json 不能为空")
 
+                # 调试信息：显示原始输入
+                print(f"[PersonaLoader] 原始输入长度: {len(persona_json)} 字符")
+                print(f"[PersonaLoader] 原始输入类型: {type(persona_json)}")
+                print(f"[PersonaLoader] 前 200 字符: {repr(persona_json[:200])}")
+                print(f"[PersonaLoader] 后 100 字符: {repr(persona_json[-100:])}")
+
                 # 预处理 JSON 字符串
                 # 1. 去除 UTF-8 BOM（如果存在）
                 persona_json_cleaned = persona_json.lstrip('\ufeff')
@@ -77,10 +81,20 @@ class PersonaLoader:
                 # 2. 去除前后空白字符
                 persona_json_cleaned = persona_json_cleaned.strip()
 
-                # 3. 检查是否有多个 JSON 对象（"Extra data" 的常见原因）
-                # 尝试找到第一个完整的 JSON 对象
-                if persona_json_cleaned.startswith('{'):
-                    # 简单的括号匹配，找到第一个完整的 JSON 对象
+                print(f"[PersonaLoader] 清理后长度: {len(persona_json_cleaned)} 字符")
+                print(f"[PersonaLoader] 清理后前 200 字符: {repr(persona_json_cleaned[:200])}")
+
+                # 3. 检查 JSON 格式并处理
+                # 检查是否以 { 开头（对象）或 [ 开头（数组）
+                if not persona_json_cleaned:
+                    raise ValueError("清理后的 JSON 字符串为空")
+
+                first_char = persona_json_cleaned[0]
+                print(f"[PersonaLoader] JSON 第一个字符: {repr(first_char)}")
+
+                if first_char == '{':
+                    # JSON 对象 - 查找第一个完整的对象
+                    print(f"[PersonaLoader] 检测到 JSON 对象格式")
                     depth = 0
                     in_string = False
                     escape = False
@@ -111,6 +125,16 @@ class PersonaLoader:
                             print(f"[PersonaLoader] ⚠️  警告: 检测到JSON对象后有额外内容，已自动截取第一个JSON对象")
                             print(f"[PersonaLoader]    额外内容的前100字符: {repr(extra_content[:100])}")
                             persona_json_cleaned = persona_json_cleaned[:first_json_end]
+
+                elif first_char == '[':
+                    print(f"[PersonaLoader] 检测到 JSON 数组格式（不支持）")
+                    raise ValueError("不支持 JSON 数组格式，请传入 JSON 对象（以 {{ 开头）")
+
+                else:
+                    print(f"[PersonaLoader] ⚠️  错误: JSON 格式无效")
+                    print(f"[PersonaLoader]    第一个字符应该是 '{{' 或 '['，但是: {repr(first_char)}")
+                    print(f"[PersonaLoader]    前 500 字符: {repr(persona_json_cleaned[:500])}")
+                    raise ValueError(f"JSON 格式无效：应以 '{{' 开头，但实际是 {repr(first_char)}")
 
                 # 解析JSON字符串
                 try:
