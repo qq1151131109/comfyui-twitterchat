@@ -1,0 +1,135 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║          PERSONA GENERATION - QUICK REFERENCE CARD                   ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+📸 GENERATE FROM IMAGE (RECOMMENDED FOR VISUAL CONSISTENCY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  🚀 Quick Start:
+  └─ python persona_from_image.py --image photo.jpg
+
+  🎯 With Options:
+  └─ python persona_from_image.py --image photo.jpg --name "Sophia" --nsfw medium
+
+  🔥 NSFW Levels:
+  ├─ soft     → Innocent-flirty, girl-next-door
+  ├─ medium   → Balanced teasing (DEFAULT) ⭐
+  └─ high     → Openly sexual, bold
+
+  ✅ Use When:
+  ├─ You have a portrait photo
+  ├─ Want appearance to match exactly
+  └─ Need visual consistency
+
+  🧪 Test:
+  └─ ./test_image_generator.sh
+
+
+✍️  GENERATE FROM TEXT (FOR CUSTOM PERSONAS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  🚀 Interactive Mode:
+  └─ python persona_generator.py --interactive
+
+  🎯 Command Line:
+  └─ python persona_generator.py --name "Emily" --type "fitness-girl"
+
+  📝 Popular Types:
+  ├─ fitness-girl      → Gym, athletic, healthy lifestyle
+  ├─ college-student   → Campus, study, young & fresh
+  ├─ california-girl   → Beach, sunny, carefree
+  ├─ artist           → Creative, bohemian, artsy
+  └─ goth-girl        → Dark, edgy, alternative
+
+  ✅ Use When:
+  ├─ No photo available
+  ├─ Specific text requirements
+  └─ Want to experiment
+
+  🧪 Test:
+  └─ ./test_generator.sh
+
+
+📂 SAMPLE IMAGES AVAILABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  image/
+  ├─ hollyjai.jpg
+  ├─ keti_one__.jpg
+  ├─ jazmynmakenna.jpg
+  ├─ chloemariedub.jpg
+  └─ ... 9 more images
+
+  Try:
+  └─ python persona_from_image.py --image image/hollyjai.jpg
+
+
+📦 OUTPUT LOCATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  personas/{name}_{identifier}.json
+
+  Use in ComfyUI:
+  └─ custom_nodes/comfyui-twitterchat/personas/your_file.json
+
+
+🎓 WHAT YOU GET
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✅ Complete Character Card V2 JSON
+  ✅ Physical appearance (if from image)
+  ✅ Personality & background
+  ✅ Twitter strategy + 10-12 tweet examples
+  ✅ WhatsApp chat guide + conversation examples
+  ✅ Male attraction profile
+  ✅ English output
+  ✅ Real person vibe (no OnlyFans mentions)
+
+
+🎯 KEY PRINCIPLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Match appearance (image tool) or description (text tool)
+  2. Attract male followers naturally
+  3. Include NSFW/flirty content (adjustable)
+  4. Seem like a real person with real job
+  5. Never mention OnlyFans or content selling
+  6. English only
+  7. Detailed and complete
+
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  📖 PERSONA_TOOLS_README.md        → Overview of both tools
+  📖 IMAGE_PERSONA_GUIDE.md         → Image tool complete guide
+  📖 PERSONA_GENERATOR_GUIDE.md     → Text tool complete guide
+
+
+💡 QUICK TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Use "medium" NSFW for most cases
+  • Clear, well-lit photos work best
+  • Regenerate if first output isn't perfect
+  • You can manually edit JSON files
+  • Try different settings to find what works
+
+
+🚀 GET STARTED IN 10 SECONDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  cd custom_nodes/comfyui-twitterchat
+
+  # Test with sample image
+  ./test_image_generator.sh
+
+  # Or generate from your photo
+  python persona_from_image.py --image your_photo.jpg
+
+
+═══════════════════════════════════════════════════════════════════════
+
+  Need help? Check PERSONA_TOOLS_README.md for complete guide
+
+═══════════════════════════════════════════════════════════════════════

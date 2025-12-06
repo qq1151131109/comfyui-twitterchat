@@ -1,11 +1,11 @@
-"""Auto-load LoRA from persona node"""
+"""从人设自动加载 LoRA 节点"""
 import comfy.sd
 import comfy.utils
 import folder_paths
 
 
 class LoraLoaderFromPersona:
-    """Automatically load LoRA model from persona"""
+    """从人设中自动加载 LoRA 模型"""
 
     def __init__(self):
         self.loaded_lora = None
@@ -55,42 +55,42 @@ class LoraLoaderFromPersona:
 
     def load_lora_from_persona(self, model, clip, persona, strength_model=1.0, strength_clip=1.0, lora_name_override=""):
         """
-        Load LoRA model from persona
+        从人设中加载 LoRA 模型
 
-        Args:
+        参数:
             model: Diffusion model
             clip: CLIP model
-            persona: Character Card data
-            strength_model: Model strength (defaults to persona's recommended_weight)
-            strength_clip: CLIP strength
-            lora_name_override: Manually override LoRA name
+            persona: Character Card 数据
+            strength_model: 模型强度（默认使用人设中的 recommended_weight）
+            strength_clip: CLIP 强度
+            lora_name_override: 手动覆盖 LoRA 名称
 
-        Returns:
-            (model, clip, lora_info) Modified model, CLIP, LoRA information
+        返回:
+            (model, clip, lora_info) 修改后的模型、CLIP、LoRA 信息
         """
-        # Extract LoRA configuration
+        # 提取 LoRA 配置
         lora_config = self._extract_lora_config(persona)
 
         if not lora_config:
-            # If no LoRA config, return original model
+            # 如果没有 LoRA 配置，直接返回原模型
             return (model, clip, "No LoRA config found in persona")
 
-        # Get LoRA name (override takes priority)
+        # 获取 LoRA 名称（优先使用 override）
         if lora_name_override.strip():
             lora_name = lora_name_override.strip()
         else:
-            # Support both model_name and model_path field names
+            # 支持 model_name 和 model_path 两种字段名
             lora_name = lora_config.get("model_name") or lora_config.get("model_path", "")
 
         if not lora_name:
             return (model, clip, "No LoRA model name specified")
 
-        # Use persona's recommended weight (if strength_model is default 1.0)
-        # Support both recommended_weight and strength field names
+        # 使用人设中的推荐权重（如果 strength_model 是默认值 1.0）
+        # 支持 recommended_weight 和 strength 两种字段名
         if strength_model == 1.0:
             strength_model = lora_config.get("recommended_weight") or lora_config.get("strength", 1.0)
 
-        # Check if LoRA file exists
+        # 检查 LoRA 文件是否存在
         try:
             lora_path = folder_paths.get_full_path_or_raise("loras", lora_name)
         except Exception as e:
@@ -99,11 +99,11 @@ class LoraLoaderFromPersona:
             print(f"[LoraLoaderFromPersona] Available LoRAs: {folder_paths.get_filename_list('loras')[:10]}")
             return (model, clip, error_msg)
 
-        # If strength is 0, return directly
+        # 如果强度为 0，直接返回
         if strength_model == 0 and strength_clip == 0:
             return (model, clip, f"LoRA skipped (strength=0): {lora_name}")
 
-        # Load LoRA (with caching mechanism)
+        # 加载 LoRA（使用缓存机制）
         lora = None
         if self.loaded_lora is not None:
             if self.loaded_lora[0] == lora_path:
@@ -120,13 +120,13 @@ class LoraLoaderFromPersona:
                 print(f"[LoraLoaderFromPersona] {error_msg}")
                 return (model, clip, error_msg)
 
-        # Apply LoRA to models
+        # 应用 LoRA 到模型
         try:
             model_lora, clip_lora = comfy.sd.load_lora_for_models(
                 model, clip, lora, strength_model, strength_clip
             )
 
-            # Build info string
+            # 构建信息字符串
             trigger_words = lora_config.get("trigger_words", [])
             trigger_str = ", ".join(trigger_words) if isinstance(trigger_words, list) else str(trigger_words)
             lora_info = f"✓ Loaded: {lora_name} (strength: {strength_model:.2f})\nTriggers: {trigger_str}"
@@ -139,23 +139,23 @@ class LoraLoaderFromPersona:
 
     def _extract_lora_config(self, persona: dict) -> dict:
         """
-        Extract LoRA configuration from persona
+        从人设中提取 LoRA 配置
 
-        Args:
-            persona: Character Card data
+        参数:
+            persona: Character Card 数据
 
-        Returns:
-            LoRA configuration dictionary
+        返回:
+            LoRA 配置字典
         """
         data = persona.get("data", {})
 
-        # Try reading lora config from multiple locations
+        # 尝试从多个位置读取 lora 配置
         lora_config = data.get("lora") or data.get("extensions", {}).get("lora")
 
         return lora_config or {}
 
 
-# Node registration
+# 节点注册
 NODE_CLASS_MAPPINGS = {
     "LoraLoaderFromPersona": LoraLoaderFromPersona
 }

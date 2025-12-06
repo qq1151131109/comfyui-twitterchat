@@ -1,1 +1,58 @@
 """Node modules for TwitterChat"""
+
+# Persona Generation Pipeline Nodes - Phase 1 (MVP)
+from .persona_input import NODE_CLASS_MAPPINGS as PERSONA_INPUT_MAPPINGS
+from .persona_input import NODE_DISPLAY_NAME_MAPPINGS as PERSONA_INPUT_DISPLAY
+
+from .persona_generator import NODE_CLASS_MAPPINGS as PERSONA_GEN_MAPPINGS
+from .persona_generator import NODE_DISPLAY_NAME_MAPPINGS as PERSONA_GEN_DISPLAY
+
+from .persona_tools import NODE_CLASS_MAPPINGS as PERSONA_TOOLS_MAPPINGS
+from .persona_tools import NODE_DISPLAY_NAME_MAPPINGS as PERSONA_TOOLS_DISPLAY
+
+from .persona_io import NODE_CLASS_MAPPINGS as PERSONA_IO_MAPPINGS
+from .persona_io import NODE_DISPLAY_NAME_MAPPINGS as PERSONA_IO_DISPLAY
+
+# Persona Generation Pipeline Nodes - Phase 2 (Quality Enhancement)
+from .persona_quality import NODE_CLASS_MAPPINGS as PERSONA_QUALITY_MAPPINGS
+from .persona_quality import NODE_DISPLAY_NAME_MAPPINGS as PERSONA_QUALITY_DISPLAY
+
+from .persona_enhancement import NODE_CLASS_MAPPINGS as PERSONA_ENHANCE_MAPPINGS
+from .persona_enhancement import NODE_DISPLAY_NAME_MAPPINGS as PERSONA_ENHANCE_DISPLAY
+
+# Persona Generation Pipeline Nodes - Phase 3 (Complete Flow)
+from .persona_advanced import NODE_CLASS_MAPPINGS as PERSONA_ADVANCED_MAPPINGS
+from .persona_advanced import NODE_DISPLAY_NAME_MAPPINGS as PERSONA_ADVANCED_DISPLAY
+
+from .persona_knowledge import NODE_CLASS_MAPPINGS as PERSONA_KNOWLEDGE_MAPPINGS
+from .persona_knowledge import NODE_DISPLAY_NAME_MAPPINGS as PERSONA_KNOWLEDGE_DISPLAY
+
+# Combine all persona node mappings
+PERSONA_NODE_CLASS_MAPPINGS = {}
+PERSONA_NODE_DISPLAY_NAME_MAPPINGS = {}
+
+for mappings in [
+    PERSONA_INPUT_MAPPINGS,
+    PERSONA_GEN_MAPPINGS,
+    PERSONA_TOOLS_MAPPINGS,
+    PERSONA_IO_MAPPINGS,
+    PERSONA_QUALITY_MAPPINGS,
+    PERSONA_ENHANCE_MAPPINGS,
+    PERSONA_ADVANCED_MAPPINGS,
+    PERSONA_KNOWLEDGE_MAPPINGS
+]:
+    PERSONA_NODE_CLASS_MAPPINGS.update(mappings)
+
+for display_mappings in [
+    PERSONA_INPUT_DISPLAY,
+    PERSONA_GEN_DISPLAY,
+    PERSONA_TOOLS_DISPLAY,
+    PERSONA_IO_DISPLAY,
+    PERSONA_QUALITY_DISPLAY,
+    PERSONA_ENHANCE_DISPLAY,
+    PERSONA_ADVANCED_DISPLAY,
+    PERSONA_KNOWLEDGE_DISPLAY
+]:
+    PERSONA_NODE_DISPLAY_NAME_MAPPINGS.update(display_mappings)
+
+__all__ = ['PERSONA_NODE_CLASS_MAPPINGS', 'PERSONA_NODE_DISPLAY_NAME_MAPPINGS']

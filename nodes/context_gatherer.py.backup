@@ -1,5 +1,5 @@
-"""Context gathering node"""
-# Use relative imports
+"""上下文收集节点"""
+# 使用相对导入
 from ..tools.datetime_tool import DateTimeTool
 from ..tools.weather_tool import WeatherTool
 from ..tools.trending_tool import TrendingTopicsTool
@@ -7,7 +7,7 @@ from ..utils.persona_utils import get_persona_location
 
 
 class ContextGatherer:
-    """Context gatherer (date, weather, trending topics)"""
+    """上下文收集器（日期、天气、热搜）"""
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -16,7 +16,7 @@ class ContextGatherer:
                 "persona": ("PERSONA",),
             },
             "optional": {
-                # Weather settings
+                # 天气设置
                 "enable_weather": ("BOOLEAN", {"default": True}),
                 "weather_api_key": ("STRING", {
                     "default": "",
@@ -24,7 +24,7 @@ class ContextGatherer:
                     "placeholder": "OpenWeatherMap API key"
                 }),
 
-                # Trending settings
+                # 热搜设置
                 "enable_trending": ("BOOLEAN", {"default": False}),
             }
         }
@@ -38,51 +38,51 @@ class ContextGatherer:
     def gather(self, persona, enable_weather=True, weather_api_key="",
                enable_trending=False):
         """
-        Gather context information (fully reads location and timezone from persona)
+        收集上下文信息（完全从人设中读取地理位置和时区）
 
-        Returns:
-            context dictionary
+        返回:
+            context 字典
         """
         context = {}
 
-        # Get city and country code from persona
+        # 从人设获取城市和国家代码
         city, country_code = get_persona_location(persona)
 
-        # Get timezone from persona
+        # 从人设获取时区
         timezone = None
         try:
             location = persona.get("data", {}).get("core_info", {}).get("location", {})
             timezone = location.get("timezone")
             if timezone:
-                print(f"[ContextGatherer] Using user timezone: {timezone}")
+                print(f"[ContextGatherer] 使用用户时区: {timezone}")
         except Exception as e:
-            print(f"[ContextGatherer] Failed to read timezone, using server time: {str(e)}")
+            print(f"[ContextGatherer] 读取时区失败，使用服务器时间: {str(e)}")
 
-        # 1. Date and time (required, using compact mode)
+        # 1. 日期时间（必选，使用精简模式）
         try:
-            # Use persona's country code and timezone for holiday detection, enable compact mode
+            # 使用人设的国家代码和时区检测节假日，启用精简模式
             date_tool = DateTimeTool(country=country_code, compact=True, timezone=timezone)
             context["date"] = date_tool.execute()
         except Exception as e:
             context["date"] = {"error": str(e)}
 
-        # 2. Weather (optional)
+        # 2. 天气（可选）
         if enable_weather:
             try:
                 if weather_api_key and city:
                     weather_tool = WeatherTool(weather_api_key)
                     context["weather"] = weather_tool.execute(city, country_code)
                 elif not weather_api_key:
-                    context["weather"] = {"error": "weather_api_key not configured"}
+                    context["weather"] = {"error": "未配置 weather_api_key"}
                 else:
-                    context["weather"] = {"error": "City not configured in persona"}
+                    context["weather"] = {"error": "人设中未配置城市信息"}
             except Exception as e:
                 context["weather"] = {"error": str(e)}
 
-        # 3. Trending topics (optional)
+        # 3. 热搜（可选）
         if enable_trending:
             try:
-                # Use persona's country code to get trending topics
+                # 使用人设的国家代码获取热搜
                 trending_tool = TrendingTopicsTool(geo=country_code)
                 context["trending"] = trending_tool.execute(top_n=5)
             except Exception as e:
@@ -91,7 +91,7 @@ class ContextGatherer:
         return (context,)
 
 
-# Node registration
+# 节点注册
 NODE_CLASS_MAPPINGS = {
     "ContextGatherer": ContextGatherer
 }

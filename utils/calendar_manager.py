@@ -1,4 +1,4 @@
-"""运营日历管理工具"""
+"""Content calendar management tool"""
 import os
 import json
 from datetime import datetime
@@ -7,61 +7,61 @@ from .file_lock import file_lock
 
 
 class CalendarManager:
-    """运营日历管理器"""
+    """Content calendar manager"""
 
     def __init__(self, calendar_dir: str = "calendars"):
         """
-        初始化日历管理器
+        Initialize calendar manager
 
         Args:
-            calendar_dir: 日历文件存储目录
+            calendar_dir: Calendar file storage directory
         """
         self.calendar_dir = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             calendar_dir
         )
 
-        # 确保目录存在
+        # Ensure directory exists
         os.makedirs(self.calendar_dir, exist_ok=True)
 
     def get_calendar_path(self, persona_name: str, year_month: str) -> str:
         """
-        获取日历文件路径
+        Get calendar file path
 
         Args:
-            persona_name: 人设名称
-            year_month: 年月，格式 YYYY-MM
+            persona_name: Persona name
+            year_month: Year-month, format YYYY-MM
 
         Returns:
-            日历文件路径
+            Calendar file path
         """
         filename = f"{persona_name}_{year_month}.json"
         return os.path.join(self.calendar_dir, filename)
 
     def calendar_exists(self, persona_name: str, year_month: str) -> bool:
         """
-        检查日历文件是否存在
+        Check if calendar file exists
 
         Args:
-            persona_name: 人设名称
-            year_month: 年月，格式 YYYY-MM
+            persona_name: Persona name
+            year_month: Year-month, format YYYY-MM
 
         Returns:
-            是否存在
+            Whether it exists
         """
         path = self.get_calendar_path(persona_name, year_month)
         return os.path.exists(path)
 
     def load_calendar(self, persona_name: str, year_month: str) -> Optional[Dict]:
         """
-        加载日历文件（带文件锁保护）
+        Load calendar file (with file lock protection)
 
         Args:
-            persona_name: 人设名称
-            year_month: 年月，格式 YYYY-MM
+            persona_name: Persona name
+            year_month: Year-month, format YYYY-MM
 
         Returns:
-            日历数据，如果不存在返回 None
+            Calendar data, returns None if doesn't exist
         """
         path = self.get_calendar_path(persona_name, year_month)
 
@@ -69,54 +69,54 @@ class CalendarManager:
             return None
 
         try:
-            # 使用文件锁保护读取操作
+            # Protect read operation with file lock
             with file_lock(path, timeout=5.0):
                 with open(path, 'r', encoding='utf-8') as f:
                     return json.load(f)
         except TimeoutError:
-            print(f"[CalendarManager] 加载日历超时（文件被锁定）: {path}")
+            print(f"[CalendarManager] Calendar load timeout (file locked): {path}")
             return None
         except Exception as e:
-            print(f"[CalendarManager] 加载日历失败: {e}")
+            print(f"[CalendarManager] Failed to load calendar: {e}")
             return None
 
     def save_calendar(self, persona_name: str, year_month: str, calendar_data: Dict) -> bool:
         """
-        保存日历文件（带文件锁保护）
+        Save calendar file (with file lock protection)
 
         Args:
-            persona_name: 人设名称
-            year_month: 年月，格式 YYYY-MM
-            calendar_data: 日历数据
+            persona_name: Persona name
+            year_month: Year-month, format YYYY-MM
+            calendar_data: Calendar data
 
         Returns:
-            是否保存成功
+            Whether save succeeded
         """
         path = self.get_calendar_path(persona_name, year_month)
 
         try:
-            # 使用文件锁保护写入操作
+            # Protect write operation with file lock
             with file_lock(path, timeout=10.0):
                 with open(path, 'w', encoding='utf-8') as f:
                     json.dump(calendar_data, f, ensure_ascii=False, indent=2)
             return True
         except TimeoutError:
-            print(f"[CalendarManager] 保存日历超时（文件被锁定）: {path}")
+            print(f"[CalendarManager] Calendar save timeout (file locked): {path}")
             return False
         except Exception as e:
-            print(f"[CalendarManager] 保存日历失败: {e}")
+            print(f"[CalendarManager] Failed to save calendar: {e}")
             return False
 
     def get_today_plan(self, persona_name: str, date: Optional[str] = None) -> Optional[Dict]:
         """
-        获取指定日期的运营计划
+        Get operation plan for specified date
 
         Args:
-            persona_name: 人设名称
-            date: 日期，格式 YYYY-MM-DD，默认为今天
+            persona_name: Persona name
+            date: Date, format YYYY-MM-DD, defaults to today
 
         Returns:
-            当日运营计划，如果不存在返回 None
+            Daily operation plan, returns None if doesn't exist
         """
         if date is None:
             date = datetime.now().strftime("%Y-%m-%d")
@@ -129,14 +129,15 @@ class CalendarManager:
 
         return calendar.get("calendar", {}).get(date)
 
-    def generate_calendar_prompt(self, persona: Dict, year_month: str, days_to_generate: int = 15) -> str:
+    def generate_calendar_prompt(self, persona: Dict, year_month: str, days_to_generate: int = 15, start_date: str = None) -> str:
         """
-        生成日历生成的 LLM prompt
+        Generate LLM prompt for calendar generation
 
         Args:
-            persona: 人设数据
-            year_month: 年月，格式 YYYY-MM
-            days_to_generate: 要生成的天数，默认15天
+            persona: Persona data
+            year_month: Year-month, format YYYY-MM
+            days_to_generate: Number of days to generate, default 15
+            start_date: Start date for generation (format YYYY-MM-DD). If None, starts from month beginning
 
         Returns:
             LLM prompt
@@ -144,149 +145,164 @@ class CalendarManager:
         data = persona["data"]
         name = data.get("name", "Unknown")
 
-        # 提取人设信息
+        # Extract persona information
         description = data.get("description", "")
         personality = data.get("personality", "")
 
-        # 获取月份和天数
+        # Get month and days
         year, month = year_month.split("-")
 
-        # 计算当月天数
+        # Calculate days in month
         import calendar
         _, days_in_month = calendar.monthrange(int(year), int(month))
 
-        # 限制生成天数不超过当月实际天数
-        actual_days = min(days_to_generate, days_in_month)
+        # Determine start day
+        if start_date:
+            # Use provided start date
+            start_day = int(start_date.split("-")[2])
+        else:
+            # Default to month beginning
+            start_day = 1
 
-        # ⭐ 根据人设的国家代码获取节假日（问题4修复）
+        # Calculate how many days can be generated from start_day
+        remaining_days_in_month = days_in_month - start_day + 1
+        actual_days = min(days_to_generate, remaining_days_in_month)
+
+        # ⭐ Get holidays based on persona's country code (Issue #4 fix)
         import holidays
 
-        # 从人设中读取国家代码
+        # Read country code from persona
         core_info = data.get("core_info") or data.get("extensions", {}).get("core_info", {})
         location = core_info.get("location", {})
         country_code = location.get("country_code", "US")
 
-        # 使用对应国家的节假日
+        # Use corresponding country's holidays
         try:
             country_holidays = holidays.country_holidays(country_code, years=int(year))
         except Exception:
-            # 如果国家代码无效，fallback 到 US
+            # If country code invalid, fallback to US
             country_holidays = holidays.country_holidays("US", years=int(year))
 
         month_holidays = []
-        for i in range(1, actual_days + 1):
+        for i in range(start_day, start_day + actual_days):
             date = f"{year_month}-{i:02d}"
             date_obj = datetime.strptime(date, "%Y-%m-%d").date()
             if date_obj in country_holidays:
                 holiday_name = country_holidays.get(date_obj)
                 month_holidays.append(f"{date}: {holiday_name}")
 
-        holidays_info = "\n".join(month_holidays) if month_holidays else "无特殊节日"
+        holidays_info = "\n".join(month_holidays) if month_holidays else "No special holidays"
 
-        # 格式化年月显示（2025-12 → 2025 年 12 月）
-        year_month_display = f"{year} 年 {month} 月"
+        # Format year-month display
+        year_month_display = f"{month}/{year}"
 
-        prompt = f"""你是一位专业的社交媒体运营专家，为 {name} 规划 {year_month_display} 的推文运营日历。
+        # Calculate end date
+        end_day = start_day + actual_days - 1
 
-人设信息：
-- 名称：{name}
-- 描述：{description}
-- 性格：{personality}
+        prompt = f"""You are a professional social media operations expert planning {name}'s tweet calendar for {year_month_display}.
 
-运营目标：
-- 内容多样化但符合人设
-- 保持真实感和一致性
-- 引导粉丝互动
+Persona Information:
+- Name: {name}
+- Description: {description}
+- Personality: {personality}
 
-本月特殊日期（前 {actual_days} 天）：
+Operation Goals:
+- Diversified content that matches persona
+- Maintain authenticity and consistency
+- Encourage fan engagement
+
+Special dates in this period:
 {holidays_info}
 
-要求：
-1. 规划 {year_month}-01 到 {year_month}-{actual_days:02d} 共 {actual_days} 天的内容
-2. 根据人设特点设计一周节奏（周一到周日的内容类型）
-3. 特殊日期要有特殊主题（节日、纪念日）
-4. 内容类型要多样化，避免连续3天相同类型
-5. topic_type 要符合人设特点（不要使用通用类型，要具体化）
-6. suggested_scene 用英文描述，简洁明了
-7. **重要**：suggested_scene 必须是单人场景，只描述这个人物自己的活动，不要出现其他人（如爷爷、朋友、家人等）
+Requirements:
+1. Plan {actual_days} days from {year_month}-{start_day:02d} to {year_month}-{end_day:02d}
+2. Design weekly rhythm (Monday to Sunday content types) based on persona traits
+3. Special themes for special dates (holidays, anniversaries)
+4. Diversify content types, avoid 3 consecutive days of same type
+5. topic_type should match persona traits (don't use generic types, be specific)
+6. suggested_scene should be described in natural English paragraphs, concise and clear
+7. **Important**: suggested_scene must be a solo scene, only describe this character's own activities, don't involve other people (like grandpa, friends, family, etc.)
 
-8. **新增 - 内容类型分布要求**：
-   - 50% lifestyle_mundane（生活琐碎/日常废话，如"今天天气好热"、"午饭吃什么"）
-   - 20% personal_emotion（情绪分享，如累/孤独/开心/怀旧）
-   - 20% interaction_bait（互动引导：poll投票/question提问/choice选择题/controversy温和争议）
-   - 8% visual_showcase（OOTD、自拍、才艺展示）
-   - 2% cta_conversion（引流转化，每周最多1-2次）
+8. **New - Content Type Distribution Requirements**:
+   - 50% lifestyle_mundane (mundane life/daily chatter, like "weather so hot today", "what to eat for lunch")
+   - 20% personal_emotion (emotional sharing, like tired/lonely/happy/nostalgic)
+   - 20% interaction_bait (interaction prompts: poll/question/choice/mild controversy)
+   - 8% visual_showcase (OOTD, selfie, talent showcase)
+   - 2% cta_conversion (traffic conversion, max 1-2 times per week)
 
-9. **新增 - 为每天推荐发布时间段**：
-   - early_morning (06:00-08:30): 适合起床抱怨、困倦内容
-   - morning (08:30-11:30): 适合日常工作/学习、阳光分享
-   - midday (11:30-14:00): 适合投票、闲聊、选择题
-   - afternoon (14:00-18:00): 适合专注工作/学习、才艺展示
-   - evening_prime (18:00-22:00): 适合OOTD、自拍、视觉内容
-   - late_night (22:00-02:00): 适合失眠、孤独、情感、引流
+9. **New - Recommend posting time slot for each day**:
+   - early_morning (06:00-08:30): suitable for waking up complaints, tired content
+   - morning (08:30-11:30): suitable for daily work/study, sunshine sharing
+   - midday (11:30-14:00): suitable for polls, chatter, choice questions
+   - afternoon (14:00-18:00): suitable for focused work/study, talent showcase
+   - evening_prime (18:00-22:00): suitable for OOTD, selfies, visual content
+   - late_night (22:00-02:00): suitable for insomnia, loneliness, emotional, traffic conversion
 
-10. **新增 - 战略性缺陷分配**（可选）：
-    每周随机在2-3天的计划中指定一个战略性缺陷：
-    - sleep_deprived（失眠/困倦）
-    - clumsy（笨拙/打翻东西）
-    - tech_inept（技术故障/WiFi断）
-    - forgetful（健忘）
+10. **New - Strategic Flaw Assignment** (optional):
+    Randomly assign a strategic flaw to 2-3 days per week in the plan:
+    - sleep_deprived (insomnia/tired)
+    - clumsy (clumsy/spilling things)
+    - tech_inept (tech malfunction/WiFi down)
+    - forgetful (forgetful)
 
-输出格式（严格 JSON，不要有其他说明文字）：
+11. **CRITICAL**: ALL text output fields (theme, content_direction, keywords) MUST be in English. Do not use any Chinese characters.
+
+Output format (strict JSON, no other explanatory text):
 {{
-  "{year_month}-01": {{
+  "{year_month}-{start_day:02d}": {{
     "weekday": "Monday",
-    "topic_type": "lifestyle_mundane",  // 必须是上述类型之一：lifestyle_mundane/personal_emotion/interaction_bait/visual_showcase/cta_conversion
+    "topic_type": "lifestyle_mundane",  // Must be one of the above types: lifestyle_mundane/personal_emotion/interaction_bait/visual_showcase/cta_conversion
     "tweet_format": "standard",  // standard/thread/poll/grwm
-    "recommended_time": "morning",  // 推荐时间段：early_morning/morning/midday/afternoon/evening_prime/late_night
-    "mood": "energetic",  // 匹配时间段的情绪
-    "theme": "晨间日常",
-    "content_direction": "分享早上的例行公事，轻松愉快",
-    "keywords": ["早晨", "日常", "阳光"],
-    "suggested_scene": "morning routine, sunlight, energetic mood...",
+    "recommended_time": "morning",  // Recommended time slot: early_morning/morning/midday/afternoon/evening_prime/late_night
+    "mood": "energetic",  // Mood matching time slot
+    "theme": "Morning routine",  // MUST BE IN ENGLISH
+    "content_direction": "Share morning routine, light and cheerful",  // MUST BE IN ENGLISH
+    "keywords": ["morning", "routine", "sunshine"],  // MUST BE IN ENGLISH
+    "suggested_scene": "morning routine, sunlight, energetic mood...",  // MUST BE IN ENGLISH
     "special_event": null,
-    "strategic_flaw": null  // 可选：sleep_deprived/clumsy/tech_inept/forgetful
+    "strategic_flaw": null  // Optional: sleep_deprived/clumsy/tech_inept/forgetful
   }},
-  "{year_month}-{actual_days:02d}": {{
+  "{year_month}-{end_day:02d}": {{
     "weekday": "...",
     "topic_type": "...",
     "tweet_format": "...",
     "recommended_time": "...",
     "mood": "...",
-    "theme": "...",
-    "content_direction": "...",
-    "keywords": [...],
-    "suggested_scene": "...",
+    "theme": "...",  // MUST BE IN ENGLISH
+    "content_direction": "...",  // MUST BE IN ENGLISH
+    "keywords": [...],  // MUST BE IN ENGLISH
+    "suggested_scene": "...",  // MUST BE IN ENGLISH
     "special_event": null,
     "strategic_flaw": null
   }}
 }}
 
-重要提示：
-- topic_type 必须严格使用上述5种类型（lifestyle_mundane/personal_emotion/interaction_bait/visual_showcase/cta_conversion）
-- 内容分布要遵循 50%/20%/20%/8%/2% 的比例
-- recommended_time 要根据内容类型合理匹配（如 late_night 适合情感内容）
-- strategic_flaw 每周随机分配2-3次，不要每天都有
-- 保持风格一致性，符合人设的语言习惯和行为特点
+Important reminders:
+- topic_type must strictly use the above 5 types (lifestyle_mundane/personal_emotion/interaction_bait/visual_showcase/cta_conversion)
+- Content distribution should follow 50%/20%/20%/8%/2% ratio
+- recommended_time should reasonably match content type (e.g., late_night suitable for emotional content)
+- strategic_flaw randomly assign 2-3 times per week, don't have it every day
+- Maintain style consistency, match persona's language habits and behavioral traits
+- **ALL OUTPUT FIELDS (theme, content_direction, keywords) MUST BE IN ENGLISH, NO CHINESE CHARACTERS**
 
-请直接输出 JSON，不要包含任何 ```json 标记或其他说明。
+Please output JSON directly, don't include any ```json markers or other explanatory text.
 """
 
         return prompt
 
     def parse_calendar_response(self, response: str, persona_name: str, year_month: str) -> Dict:
         """
-        解析 LLM 返回的日历数据
+        Parse LLM returned calendar data
 
         Args:
-            response: LLM 响应
-            persona_name: 人设名称
-            year_month: 年月
+            response: LLM response
+            persona_name: Persona name
+            year_month: Year-month
 
         Returns:
-            完整的日历数据结构
+            Complete calendar data structure
         """
-        # 清理可能的 markdown 标记
+        # Clean possible markdown markers
         response = response.strip()
         if response.startswith("```json"):
             response = response[7:]
@@ -296,34 +312,34 @@ class CalendarManager:
             response = response[:-3]
         response = response.strip()
 
-        # 尝试修复常见的 JSON 格式问题
-        # 1. 替换中文引号为英文引号
+        # Try to fix common JSON format issues
+        # 1. Replace Chinese quotes with English quotes
         response = response.replace('"', '"').replace('"', '"')
         response = response.replace(''', "'").replace(''', "'")
 
-        # 2. 如果 JSON 不完整（被截断），尝试补全
+        # 2. If JSON is incomplete (truncated), try to complete it
         if not response.endswith("}"):
-            # 找到最后一个完整的日期条目
+            # Find last complete date entry
             lines = response.split('\n')
-            # 从后往前找，直到找到一个完整的 }
+            # Search backwards until we find a complete }
             for i in range(len(lines) - 1, -1, -1):
                 if '}' in lines[i]:
-                    # 截取到这里
+                    # Truncate to here
                     response = '\n'.join(lines[:i+1])
-                    # 添加闭合括号
+                    # Add closing bracket
                     if not response.strip().endswith("}"):
                         response += "\n}"
                     break
 
-        # 解析 JSON
+        # Parse JSON
         try:
             calendar_dict = json.loads(response)
         except json.JSONDecodeError as e:
-            # 显示更多错误信息
+            # Show more error information
             error_line = e.lineno if hasattr(e, 'lineno') else 'unknown'
             error_col = e.colno if hasattr(e, 'colno') else 'unknown'
 
-            # 显示错误位置附近的内容
+            # Show content near error location
             lines = response.split('\n')
             if hasattr(e, 'lineno') and e.lineno <= len(lines):
                 context_start = max(0, e.lineno - 3)
@@ -331,26 +347,26 @@ class CalendarManager:
                 context = '\n'.join([f"{i+1}: {lines[i]}" for i in range(context_start, context_end)])
 
                 raise ValueError(
-                    f"无法解析 LLM 返回的 JSON:\n"
-                    f"错误位置: 第 {error_line} 行，第 {error_col} 列\n"
-                    f"错误信息: {str(e)}\n\n"
-                    f"错误附近内容:\n{context}\n\n"
-                    f"完整响应长度: {len(response)} 字符\n"
-                    f"响应开头:\n{response[:500]}...\n\n"
-                    f"响应结尾:\n...{response[-500:]}"
+                    f"Cannot parse LLM returned JSON:\n"
+                    f"Error location: line {error_line}, column {error_col}\n"
+                    f"Error message: {str(e)}\n\n"
+                    f"Context near error:\n{context}\n\n"
+                    f"Full response length: {len(response)} characters\n"
+                    f"Response beginning:\n{response[:500]}...\n\n"
+                    f"Response ending:\n...{response[-500:]}"
                 )
             else:
                 raise ValueError(
-                    f"无法解析 LLM 返回的 JSON: {e}\n"
-                    f"响应长度: {len(response)} 字符\n"
-                    f"响应内容:\n{response[:1000]}..."
+                    f"Cannot parse LLM returned JSON: {e}\n"
+                    f"Response length: {len(response)} characters\n"
+                    f"Response content:\n{response[:1000]}..."
                 )
 
-        # 构建完整数据结构
-        # 计算内容分布
+        # Build complete data structure
+        # Calculate content distribution
         topic_counts = {}
         for date_data in calendar_dict.values():
-            topic_type = date_data.get("topic_type", "日常分享")
+            topic_type = date_data.get("topic_type", "daily sharing")
             topic_counts[topic_type] = topic_counts.get(topic_type, 0) + 1
 
         total = len(calendar_dict)

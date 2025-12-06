@@ -1,12 +1,12 @@
-"""Content calendar management node"""
+"""运营日历管理节点"""
 from datetime import datetime
-# Use relative imports
+# 使用相对导入
 from ..utils.llm_client import LLMClient
 from ..utils.calendar_manager import CalendarManager as CalendarManagerUtil
 
 
 class CalendarManager:
-    """Content calendar management node"""
+    """运营日历管理节点"""
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -59,7 +59,7 @@ class CalendarManager:
                 "calendar_prompt_override": ("STRING", {
                     "default": "",
                     "multiline": True,
-                    "placeholder": "⭐ Directly edit calendar generation prompt (leave empty for auto-generation)"
+                    "placeholder": "⭐ 直接编辑日历生成提示词（留空则自动生成）"
                 }),
             }
         }
@@ -73,118 +73,117 @@ class CalendarManager:
     def manage_calendar(self, persona, api_key, api_base, model,
                         days_to_generate=15, day_offset=0, max_tokens=10000, force_regenerate=False, temperature=0.7, calendar_prompt_override=""):
         """
-        Manage content calendar
+        管理运营日历
 
-        Args:
-            persona: Character Card data
+        参数:
+            persona: Character Card 数据
             api_key: LLM API key
             api_base: API base URL
-            model: Model name
-            days_to_generate: Number of days to generate calendar for (default 15, max 31)
-            day_offset: Day offset (0=today, 1=tomorrow, 2=day after...for batch generation mode)
-            max_tokens: Maximum tokens for calendar generation (default 10000)
-            force_regenerate: Force regeneration
-            temperature: Temperature parameter
-            calendar_prompt_override: Directly override calendar generation prompt
+            model: 模型名称
+            days_to_generate: 生成日历的天数（默认15天，最多31天）
+            day_offset: 天数偏移（0=今天，1=明天，2=后天...用于批量生成模式）
+            max_tokens: 生成日历的最大token数（默认10000）
+            force_regenerate: 强制重新生成
+            temperature: 温度参数
+            calendar_prompt_override: 直接覆盖日历生成提示词
 
-        Returns:
+        返回:
             (today_plan, calendar_status, full_calendar, calendar_prompt, system_prompt, user_prompt, is_batch_mode)
         """
         import json
         from datetime import datetime, timedelta
 
-        # Initialize calendar manager
+        # 初始化日历管理器
         cal_manager = CalendarManagerUtil()
 
-        # Get persona name
+        # 获取人设名称
         persona_name = persona["data"].get("name", "Unknown")
 
-        # Calculate target date (today + day_offset)
+        # 计算目标日期（今天 + day_offset）
         target_date = datetime.now() + timedelta(days=day_offset)
         target_date_str = target_date.strftime("%Y-%m-%d")
         year_month = target_date_str[:7]  # YYYY-MM
 
-        # Determine if this is batch mode
+        # 判断是否为批量模式
         is_batch_mode = (day_offset > 0)
 
-        # Variables to store generated prompts
+        # 用于保存生成的 prompt
         calendar_prompt = ""
         system_prompt = ""
         user_prompt = ""
 
-        # Check if calendar generation is needed
+        # 检查是否需要生成日历
         need_generate = force_regenerate or not cal_manager.calendar_exists(persona_name, year_month)
 
         if need_generate:
-            # Generate new calendar
+            # 生成新日历
             status, calendar_prompt, system_prompt, user_prompt = self._generate_calendar(
                 cal_manager, persona, persona_name, year_month,
-                api_key, api_base, model, temperature, days_to_generate, max_tokens, calendar_prompt_override, target_date_str
+                api_key, api_base, model, temperature, days_to_generate, max_tokens, calendar_prompt_override
             )
         else:
-            status = f"✓ Using existing calendar: {year_month}"
-            calendar_prompt = "(Using existing calendar, no new prompt generated)"
-            system_prompt = "(Using existing calendar, no new prompt generated)"
-            user_prompt = "(Using existing calendar, no new prompt generated)"
+            status = f"✓ 使用已有日历: {year_month}"
+            calendar_prompt = "(使用已有日历，未生成新提示词)"
+            system_prompt = "(使用已有日历，未生成新提示词)"
+            user_prompt = "(使用已有日历，未生成新提示词)"
 
-        # Get plan for target date
+        # 获取目标日期的计划
         target_plan = cal_manager.get_today_plan(persona_name, target_date_str)
 
         if target_plan is None:
-            # If no plan for target date (possibly cross-month), try generating
+            # 如果没有目标日期的计划（可能是跨月），尝试生成
             if not need_generate:
                 status, calendar_prompt, system_prompt, user_prompt = self._generate_calendar(
                     cal_manager, persona, persona_name, year_month,
-                    api_key, api_base, model, temperature, days_to_generate, max_tokens, calendar_prompt_override, target_date_str
+                    api_key, api_base, model, temperature, days_to_generate, max_tokens, calendar_prompt_override
                 )
                 target_plan = cal_manager.get_today_plan(persona_name, target_date_str)
 
             if target_plan is None:
-                raise RuntimeError(f"Unable to retrieve content plan for {target_date_str}")
+                raise RuntimeError(f"无法获取 {target_date_str} 的运营计划")
 
-        # Add date information
+        # 添加日期信息
         target_plan["date"] = target_date_str
 
-        # If batch mode, add batch mode indicator
+        # 如果是批量模式，添加批量模式标记
         if is_batch_mode:
-            status = f"✓ Batch mode (day_offset={day_offset}): {target_date_str}"
+            status = f"✓ 批量模式 (day_offset={day_offset}): {target_date_str}"
 
-        # Read complete monthly calendar
+        # 读取完整的月度日历
         full_calendar_data = cal_manager.load_calendar(persona_name, year_month)
         if full_calendar_data:
-            # Format as readable JSON string
+            # 格式化为可读的 JSON 字符串
             full_calendar = json.dumps(full_calendar_data, indent=2, ensure_ascii=False)
         else:
-            full_calendar = json.dumps({"error": "Unable to read full calendar"}, ensure_ascii=False)
+            full_calendar = json.dumps({"error": "无法读取完整日历"}, ensure_ascii=False)
 
         return (target_plan, status, full_calendar, calendar_prompt, system_prompt, user_prompt, is_batch_mode)
 
     def _generate_calendar(self, cal_manager, persona, persona_name, year_month,
-                           api_key, api_base, model, temperature, days_to_generate, max_tokens, calendar_prompt_override="", target_date_str=None):
+                           api_key, api_base, model, temperature, days_to_generate, max_tokens, calendar_prompt_override=""):
         """
-        Generate calendar
+        生成日历
 
-        Args:
-            days_to_generate: Number of days to generate
-            max_tokens: Maximum tokens
-            calendar_prompt_override: Directly override prompt
-            target_date_str: Target date (format YYYY-MM-DD), used as start date for calendar generation
+        参数:
+            days_to_generate: 生成天数
+            max_tokens: 最大token数
+            calendar_prompt_override: 直接覆盖提示词
 
-        Returns:
-            (status message, full prompt, system prompt, user prompt)
+        返回:
+            (状态信息, 完整提示词, 系统提示词, 用户提示词)
         """
         try:
-            # Define system prompt
-            system_prompt = "You are a professional social media operations expert skilled at planning content calendars.\n\nImportant requirements:\n1. Must output valid JSON format\n2. All strings must use English double quotes \", not Chinese quotes " "\n3. All fields must be complete, cannot omit any\n4. Output must be complete JSON object, cannot be truncated\n5. Don't add any explanatory text before or after JSON, output JSON directly"
+            # 定义系统提示词
+            system_prompt = "你是专业的社交媒体运营专家，擅长规划内容日历。\n\n重要要求：\n1. 必须输出有效的 JSON 格式\n2. 所有字符串必须使用英文双引号 \"，不能使用中文引号 " "\n3. 所有字段必须完整，不能遗漏\n4. 输出必须是完整的 JSON 对象，不能截断\n5. 不要在 JSON 前后添加任何说明文字，直接输出 JSON"
 
-            # Build user prompt
-            user_prompt = cal_manager.generate_calendar_prompt(persona, year_month, days_to_generate, start_date=target_date_str)
+            # 构建用户 prompt
+            user_prompt = cal_manager.generate_calendar_prompt(persona, year_month, days_to_generate)
 
-            # ⭐ If override provided, use override (highest priority)
+            # ⭐ 如果有 override，使用 override（优先级最高）
             if calendar_prompt_override.strip():
                 user_prompt = calendar_prompt_override
 
-            # Call LLM
+            # 调用 LLM
             llm = LLMClient(api_key, api_base, model)
 
             messages = [
@@ -200,22 +199,22 @@ class CalendarManager:
 
             response = llm.generate(messages, temperature=temperature, max_tokens=max_tokens)
 
-            # Parse and save calendar
+            # 解析并保存日历
             calendar_data = cal_manager.parse_calendar_response(response, persona_name, year_month)
 
             if cal_manager.save_calendar(persona_name, year_month, calendar_data):
                 days_count = len(calendar_data["calendar"])
-                # Return full prompt (for backward compatibility)
+                # 返回完整提示词（用于向后兼容）
                 full_prompt = f"System:\n{system_prompt}\n\nUser:\n{user_prompt}"
-                return (f"✓ Successfully generated calendar for {year_month} ({days_count} days)", full_prompt, system_prompt, user_prompt)
+                return (f"✓ 成功生成 {year_month} 日历 ({days_count} 天)", full_prompt, system_prompt, user_prompt)
             else:
-                raise RuntimeError("Failed to save calendar")
+                raise RuntimeError("保存日历失败")
 
         except Exception as e:
-            raise RuntimeError(f"Failed to generate calendar: {str(e)}")
+            raise RuntimeError(f"生成日历失败: {str(e)}")
 
 
-# Node registration
+# 节点注册
 NODE_CLASS_MAPPINGS = {
     "CalendarManager": CalendarManager
 }

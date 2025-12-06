@@ -1,5 +1,5 @@
-"""人设加载节点"""
-# 使用相对导入
+"""Persona loading node"""
+# Use relative imports
 from ..utils.persona_utils import (
     load_persona_from_json,
     generate_persona_summary
@@ -9,7 +9,7 @@ import json
 
 
 class PersonaLoader:
-    """人设加载器（支持文件路径或JSON字符串）"""
+    """Persona loader (supports file path or JSON string)"""
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -17,22 +17,22 @@ class PersonaLoader:
             "required": {
                 "input_mode": (["file", "json_string"], {
                     "default": "file",
-                    "tooltip": "选择输入模式：file=从文件加载，json_string=直接在下方输入JSON"
+                    "tooltip": "Select input mode: file=load from file, json_string=enter JSON directly below"
                 }),
                 "persona_file": ("STRING", {
                     "default": "",
                     "multiline": False,
-                    "placeholder": "path/to/persona.json (仅在file模式下使用)"
+                    "placeholder": "path/to/persona.json (only used in file mode)"
                 }),
                 "persona_json": ("STRING", {
                     "default": "",
                     "multiline": True,
-                    "placeholder": "完整的Persona JSON字符串 (仅在json_string模式下使用)\n\n在这里直接粘贴JSON内容，无需Text Multiline节点",
-                    "dynamicPrompts": False  # 禁用动态提示符处理
+                    "placeholder": "Complete Persona JSON string (only used in json_string mode)\n\nPaste JSON content directly here, no need for Text Multiline node",
+                    "dynamicPrompts": False  # Disable dynamic prompt processing
                 }),
                 "user_id": ("STRING", {
                     "default": "",
-                    "placeholder": "用户ID（用于日志和输出管理）"
+                    "placeholder": "User ID (for logging and output management)"
                 }),
             }
         }
@@ -45,83 +45,83 @@ class PersonaLoader:
 
     def load(self, input_mode, persona_file, persona_json="", user_id=""):
         """
-        加载人设 Character Card（支持两种模式）
+        Load Character Card persona (supports two modes)
 
-        参数:
-            input_mode: "file" 或 "json_string"
-            persona_file: JSON 文件路径（file模式）
-            persona_json: JSON 字符串（json_string模式）
-            user_id: 用户ID（用于日志和输出）
+        Args:
+            input_mode: "file" or "json_string"
+            persona_file: JSON file path (file mode)
+            persona_json: JSON string (json_string mode)
+            user_id: User ID (for logging and output)
 
-        返回:
+        Returns:
             (persona, summary, system_prompt, user_id)
         """
         try:
-            # 根据模式加载人设
+            # Load persona based on mode
             if input_mode == "file":
                 if not persona_file or not os.path.exists(persona_file):
-                    raise ValueError(f"文件模式：请提供有效的 persona_file 路径: {persona_file}")
+                    raise ValueError(f"File mode: Please provide valid persona_file path: {persona_file}")
                 persona = load_persona_from_json(persona_file)
-                print(f"[PersonaLoader] 从文件加载人设: {persona_file}")
+                print(f"[PersonaLoader] Loaded persona from file: {persona_file}")
 
             elif input_mode == "json_string":
                 if not persona_json or persona_json.strip() == "":
-                    raise ValueError("JSON字符串模式：persona_json 不能为空")
+                    raise ValueError("JSON string mode: persona_json cannot be empty")
 
-                # 预处理：去除常见的格式问题
-                persona_json_cleaned = persona_json.lstrip('\ufeff').strip()  # 去除BOM和空白
+                # Preprocessing: remove common formatting issues
+                persona_json_cleaned = persona_json.lstrip('\ufeff').strip()  # Remove BOM and whitespace
 
                 if not persona_json_cleaned:
-                    raise ValueError("清理后的 JSON 字符串为空")
+                    raise ValueError("Cleaned JSON string is empty")
 
-                # 解析JSON字符串
+                # Parse JSON string
                 try:
                     persona = json.loads(persona_json_cleaned)
-                    print(f"[PersonaLoader] 从JSON字符串加载人设 (user_id={user_id}, {len(persona_json_cleaned)} 字符)")
+                    print(f"[PersonaLoader] Loaded persona from JSON string (user_id={user_id}, {len(persona_json_cleaned)} characters)")
 
                 except json.JSONDecodeError as e:
-                    # 提供详细的错误信息帮助调试
+                    # Provide detailed error information for debugging
                     error_pos = e.pos if hasattr(e, 'pos') else 0
                     context_start = max(0, error_pos - 100)
                     context_end = min(len(persona_json_cleaned), error_pos + 100)
                     error_context = persona_json_cleaned[context_start:context_end]
 
                     error_msg = (
-                        f"JSON解析失败: {str(e)}\n"
-                        f"错误位置: line {e.lineno}, column {e.colno} (position {error_pos})\n"
-                        f"错误附近内容: ...{repr(error_context)}...\n\n"
-                        f"提示:\n"
-                        f"- 检查JSON格式是否正确（使用在线JSON验证工具）\n"
-                        f"- 确保开头是 '{{' 结尾是 '}}'\n"
-                        f"- 检查引号、逗号、括号是否匹配\n"
-                        f"- 原始输入长度: {len(persona_json)} 字符，清理后: {len(persona_json_cleaned)} 字符"
+                        f"JSON parsing failed: {str(e)}\n"
+                        f"Error location: line {e.lineno}, column {e.colno} (position {error_pos})\n"
+                        f"Context around error: ...{repr(error_context)}...\n\n"
+                        f"Tips:\n"
+                        f"- Check if JSON format is correct (use online JSON validator)\n"
+                        f"- Ensure it starts with '{{' and ends with '}}'\n"
+                        f"- Check if quotes, commas, brackets are matched\n"
+                        f"- Original input length: {len(persona_json)} characters, after cleaning: {len(persona_json_cleaned)} characters"
                     )
                     raise ValueError(error_msg)
 
             else:
-                raise ValueError(f"不支持的输入模式: {input_mode}")
+                raise ValueError(f"Unsupported input mode: {input_mode}")
 
-            # 验证人设结构
+            # Validate persona structure
             if "data" not in persona:
-                raise ValueError("人设JSON缺少'data'字段，请检查格式")
+                raise ValueError("Persona JSON missing 'data' field, please check format")
 
-            # 生成摘要
+            # Generate summary
             summary = generate_persona_summary(persona)
 
-            # 提取系统提示词
+            # Extract system prompt
             system_prompt = persona["data"].get("system_prompt", "")
 
-            # 如果user_id为空，尝试从persona中提取
+            # If user_id is empty, try to extract from persona
             if not user_id:
                 user_id = persona["data"].get("user_id", "")
 
             return (persona, summary, system_prompt, user_id)
 
         except Exception as e:
-            raise RuntimeError(f"加载人设失败: {str(e)}")
+            raise RuntimeError(f"Failed to load persona: {str(e)}")
 
 
-# 节点注册
+# Node registration
 NODE_CLASS_MAPPINGS = {
     "PersonaLoader": PersonaLoader
 }

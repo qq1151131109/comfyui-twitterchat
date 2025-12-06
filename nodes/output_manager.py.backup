@@ -1,4 +1,4 @@
-"""Output management node"""
+"""输出管理节点"""
 import os
 import json
 from datetime import datetime
@@ -8,7 +8,7 @@ import torch
 
 
 class OutputManager:
-    """Unified output manager (organized by user_id/date)"""
+    """统一输出管理器（按user_id/date组织）"""
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -16,11 +16,11 @@ class OutputManager:
             "required": {
                 "user_id": ("STRING", {
                     "default": "",
-                    "placeholder": "User ID"
+                    "placeholder": "用户ID"
                 }),
                 "date": ("STRING", {
                     "default": "",
-                    "placeholder": "Date (YYYY-MM-DD)"
+                    "placeholder": "日期 (YYYY-MM-DD)"
                 }),
                 "tweet_text": ("STRING", {
                     "default": "",
@@ -33,25 +33,25 @@ class OutputManager:
                     "forceInput": True
                 }),
                 "images": ("IMAGE", {
-                    "tooltip": "Generated images"
+                    "tooltip": "生成的图片"
                 }),
                 "persona": ("PERSONA", {
-                    "tooltip": "Persona data (for metadata)"
+                    "tooltip": "人设数据（用于元数据）"
                 }),
             },
             "optional": {
                 "base_output_dir": ("STRING", {
                     "default": "output",
-                    "placeholder": "Base output directory"
+                    "placeholder": "基础输出目录"
                 }),
                 "workflow_id": ("STRING", {
                     "default": "",
-                    "placeholder": "Workflow ID (optional)"
+                    "placeholder": "工作流ID（可选）"
                 }),
                 "additional_metadata": ("STRING", {
                     "default": "{}",
                     "multiline": True,
-                    "placeholder": "Additional metadata JSON"
+                    "placeholder": "额外的元数据JSON"
                 }),
             }
         }
@@ -76,9 +76,9 @@ class OutputManager:
         additional_metadata="{}"
     ):
         """
-        Save content to standardized directory structure
+        保存内容到规范的目录结构
 
-        Directory structure:
+        目录结构:
             output/
             └── user_abc123/
                 └── 2025-12-03/
@@ -87,22 +87,22 @@ class OutputManager:
                     ├── scene_hint.txt
                     └── metadata.json
 
-        Args:
-            user_id: User ID
-            date: Date string (YYYY-MM-DD)
-            tweet_text: Tweet text
-            scene_hint: Scene description
-            images: Generated image tensor
-            persona: Persona data
-            base_output_dir: Base output directory
-            workflow_id: Workflow ID
-            additional_metadata: Additional metadata JSON string
+        参数:
+            user_id: 用户ID
+            date: 日期字符串 (YYYY-MM-DD)
+            tweet_text: 推文文本
+            scene_hint: 场景描述
+            images: 生成的图片张量
+            persona: 人设数据
+            base_output_dir: 基础输出目录
+            workflow_id: 工作流ID
+            additional_metadata: 额外元数据JSON字符串
 
-        Returns:
+        返回:
             (output_dir, image_path, metadata_path)
         """
         try:
-            # 1. Create output directory
+            # 1. 创建输出目录
             if not user_id:
                 user_id = "default_user"
             if not date:
@@ -111,21 +111,21 @@ class OutputManager:
             output_dir = os.path.join(base_output_dir, user_id, date)
             os.makedirs(output_dir, exist_ok=True)
 
-            # 2. Save tweet text
+            # 2. 保存推文文本
             tweet_path = os.path.join(output_dir, "tweet.txt")
             with open(tweet_path, "w", encoding="utf-8") as f:
                 f.write(tweet_text)
 
-            # 3. Save scene description
+            # 3. 保存场景描述
             scene_path = os.path.join(output_dir, "scene_hint.txt")
             with open(scene_path, "w", encoding="utf-8") as f:
                 f.write(scene_hint)
 
-            # 4. Save image
+            # 4. 保存图片
             image_path = os.path.join(output_dir, "image.png")
             self._save_image(images, image_path)
 
-            # 5. Save metadata
+            # 5. 保存元数据
             metadata_path = os.path.join(output_dir, "metadata.json")
             metadata = self._build_metadata(
                 user_id=user_id,
@@ -139,41 +139,41 @@ class OutputManager:
             with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, ensure_ascii=False, indent=2)
 
-            print(f"[OutputManager] Content saved to: {output_dir}")
-            print(f"  - Tweet: {tweet_path}")
-            print(f"  - Image: {image_path}")
-            print(f"  - Metadata: {metadata_path}")
+            print(f"[OutputManager] 内容已保存到: {output_dir}")
+            print(f"  - 推文: {tweet_path}")
+            print(f"  - 图片: {image_path}")
+            print(f"  - 元数据: {metadata_path}")
 
             return (output_dir, image_path, metadata_path)
 
         except Exception as e:
-            raise RuntimeError(f"Failed to save output: {str(e)}")
+            raise RuntimeError(f"保存输出失败: {str(e)}")
 
     def _save_image(self, images, output_path):
         """
-        Save image tensor to file
+        保存图片张量到文件
 
-        Args:
-            images: Image tensor (B, H, W, C) or (H, W, C)
-            output_path: Output path
+        参数:
+            images: 图片张量 (B, H, W, C) 或 (H, W, C)
+            output_path: 输出路径
         """
-        # Ensure it's a numpy array
+        # 确保是numpy数组
         if isinstance(images, torch.Tensor):
             images = images.cpu().numpy()
 
-        # If batch, take first image
+        # 如果是批次，取第一张
         if len(images.shape) == 4:
             image = images[0]
         else:
             image = images
 
-        # Convert to [0, 255] and ensure uint8
+        # 转换到 [0, 255] 并确保是uint8
         if image.max() <= 1.0:
             image = (image * 255).astype(np.uint8)
         else:
             image = image.astype(np.uint8)
 
-        # Save image
+        # 保存图片
         pil_image = Image.fromarray(image)
         pil_image.save(output_path, format="PNG", optimize=True)
 
@@ -187,25 +187,25 @@ class OutputManager:
         workflow_id,
         additional_metadata
     ):
-        """Build metadata dictionary"""
-        # Extract information from persona
+        """构建元数据字典"""
+        # 从人设提取信息
         persona_data = persona.get("data", {})
         persona_name = persona_data.get("name", "Unknown")
 
-        # Extract LoRA information (if available)
+        # 提取LoRA信息（如果有）
         lora_config = persona_data.get("lora", {})
         lora_model = lora_config.get("model_name", "")
         lora_weight = lora_config.get("recommended_weight", 0.7)
 
-        # Parse additional metadata
+        # 解析额外元数据
         extra_meta = {}
         if additional_metadata:
             try:
                 extra_meta = json.loads(additional_metadata)
             except json.JSONDecodeError:
-                print("[OutputManager] Warning: Unable to parse additional_metadata")
+                print("[OutputManager] 警告: 无法解析additional_metadata")
 
-        # Build complete metadata
+        # 构建完整元数据
         metadata = {
             "user_id": user_id,
             "persona_name": persona_name,
@@ -221,13 +221,13 @@ class OutputManager:
                 "model": lora_model,
                 "weight": lora_weight
             },
-            **extra_meta  # Merge additional metadata
+            **extra_meta  # 合并额外元数据
         }
 
         return metadata
 
 
-# Node registration
+# 节点注册
 NODE_CLASS_MAPPINGS = {
     "OutputManager": OutputManager
 }
